@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import tkinter.font as tkFont
+import tkinter.simpledialog
 import time
 import re
-from openai import OpenAI
-import os
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) # grab api from file
+from chat import * 
 
 # Create main window
 root = tk.Tk()
@@ -19,6 +18,45 @@ text_area.pack(expand=True, fill=tk.BOTH)
 key_sequence = []
 last_key_time = 0
 sequence_timeout = 0.5  # Max time (in seconds) between key presses
+
+# Track the font size
+current_font = tkFont.Font(family="Apple Braille", size=12)
+text_area.configure(font=current_font)
+
+def change_font():
+    """Change the font family of the text area."""
+    # List of available font families in tkinter
+    font_families = sorted(tkFont.families())
+
+    # Open a dialog to select a font
+    font_choice = tkinter.simpledialog.askstring(
+        "Select Font", 
+        f"Available fonts:\n{', '.join(font_families)}\n\nEnter a font name:",
+        parent=root
+    )
+
+    if font_choice in font_families:
+        # Change the font of the text area
+        current_font.configure(family=font_choice)
+    else:
+        messagebox.showerror("Invalid Font", "The selected font is not available.")
+
+def increase_font_size():
+    """Increase the font size of the text area."""
+    current_size = current_font.cget("size")
+    current_font.configure(size=current_size + 2)
+
+def decrease_font_size():
+    """Decrease the font size of the text area."""
+    current_size = current_font.cget("size")
+    if current_size > 8:  # Prevent font from becoming too small
+        current_font.configure(size=current_size - 2)
+
+# Bind key combinations to font size adjustment
+root.bind("<Command-=>", lambda event: increase_font_size())  # Command and + on macOS
+root.bind("<Command-minus>", lambda event: decrease_font_size())  # Command and - on macOS
+root.bind("<Control-=>", lambda event: increase_font_size())  # Ctrl and + on Windows
+root.bind("<Control-minus>", lambda event: decrease_font_size())  # Ctrl and - on Windows
 
 def new_file():
     text_area.delete(1.0, tk.END)
@@ -50,23 +88,6 @@ def save_file():
 def print_current_contents():
     content = text_area.get(1.0, tk.END).strip()  # Get all text from the text area, remove trailing newline
     print(content)
-
-def ask_chat_gpt(question):
-    """Send the question to ChatGPT and print the response."""
-    try:
-        completion = client.chat.completions.create(model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {
-                "role": "user",
-                "content": question
-            }
-        ])
-        
-        print("ChatGPT Response:", completion.choices[0].message.content)
-        messagebox.showinfo("ChatGPT Response", completion.choices[0].message.content)
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to get response from ChatGPT: {str(e)}")
 
 def handle_key(event):
     global key_sequence, last_key_time
@@ -101,6 +122,8 @@ file_menu = tk.Menu(menu_bar, tearoff=0)
 file_menu.add_command(label="New", command=new_file)
 file_menu.add_command(label="Open", command=open_file)
 file_menu.add_command(label="Save", command=save_file)
+file_menu.add_command(label="Fonts", command=change_font)
+
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.quit)
 menu_bar.add_cascade(label="File", menu=file_menu)

@@ -1,20 +1,48 @@
 import tkinter.simpledialog
+import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import messagebox
 
 def change_font(current_font):
-    """Change the font family of the text area."""
-    font_families = sorted(tkFont.families())
+    """Display a font selection window and apply the chosen font."""
+    font_families = sorted(tkFont.families())  # Get available fonts
+    
+    # Create the font selection window
+    font_window = tk.Toplevel()
+    font_window.title("Select Font")
+    font_window.geometry("300x400")  # Set window size
+    
+    # Create a scrollbar for the font list
+    scrollbar = tk.Scrollbar(font_window)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    
+    # Create a listbox with available fonts
+    font_listbox = tk.Listbox(font_window, yscrollcommand=scrollbar.set, selectmode=tk.SINGLE)
+    
+    # Insert all fonts into the listbox
+    for font in font_families:
+        font_listbox.insert(tk.END, font)
+    
+    font_listbox.pack(fill=tk.BOTH, expand=True)
+    scrollbar.config(command=font_listbox.yview)  # Attach scrollbar to listbox
 
-    font_choice = tkinter.simpledialog.askstring(
-        "Select Font", 
-        f"Available fonts:\n{', '.join(font_families)}\n\nEnter a font name:"
-    )
+    def apply_font():
+        """Apply the selected font."""
+        selected_font_index = font_listbox.curselection()
+        if selected_font_index:
+            selected_font = font_listbox.get(selected_font_index)
+            current_font.configure(family=selected_font)
+        else:
+            messagebox.showerror("No Font Selected", "Please select a font before applying.")
 
-    if font_choice in font_families:
-        current_font.configure(family=font_choice)
-    else:
-        messagebox.showerror("Invalid Font", "The selected font is not available.")
+        font_window.destroy()  # Close the selection window
+
+    # Button to apply selected font
+    apply_button = tk.Button(font_window, text="Apply", command=apply_font)
+    apply_button.pack(pady=5)
+
+    font_window.mainloop()
+
 
 def increase_font_size(current_font):
     """Increase the font size."""
